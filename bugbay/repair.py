@@ -11,6 +11,20 @@ class RepairResult:
     applied: bool
     source_file: str
     description: str
+    original_content: str | None = None
+
+
+def rollback_repair(repair: RepairResult) -> bool:
+    if not repair.applied or repair.original_content is None:
+        return False
+
+    source_path = Path(repair.source_file)
+
+    if not source_path.exists():
+        return False
+
+    source_path.write_text(repair.original_content)
+    return True
 
 
 def repair_missing_dependency(
@@ -74,4 +88,5 @@ def repair_missing_dependency(
             f"'{diagnosis.missing_module}' with "
             f"controlled module '{replacement_module}'."
         ),
+        original_content=original,
     )

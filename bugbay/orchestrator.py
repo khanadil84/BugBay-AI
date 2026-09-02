@@ -5,7 +5,7 @@ from pathlib import Path
 from bugbay.diagnosis import diagnose
 from bugbay.interceptor import run_target
 from bugbay.manifest import write_manifest
-from bugbay.repair import repair_missing_dependency
+from bugbay.repair import repair_missing_dependency, rollback_repair
 from bugbay.verifier import verify_runtime
 
 
@@ -73,13 +73,36 @@ def run_recovery(
 
     print("VERIFICATION PASSED:", verification.passed)
 
+    rolled_back = False
+
+    if not verification.passed:
+        rolled_back = rollback_repair(repair)
+        print("ROLLBACK APPLIED:", rolled_back)
+
     # 5. Persist the complete recovery evidence.
     write_manifest(
         manifest_path,
         target=str(target),
         diagnosis=diagnosis.__dict__,
         repair=repair.__dict__,
-        verification=verification.__dict__,
+        verification={
+            **verification.__dict__,
+            "before": {
+                "exit_code": initial.exit_code,
+                "stdout": initial.stdout,
+                "stderr": initial.stderr,
+                "passed": initial.success,
+            },
+            "after": {
+                "exit_code": verification.exit_code,
+                "stdout": verification.stdout,
+                "stderr": verification.stderr,
+                "passed": verification.passed,
+            },
+            "rollback": {
+                "applied": rolled_back,
+            },
+        },
     )
 
     return verification.passed

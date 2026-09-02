@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "generated_at": "2026-09-02T13:56:18.234429+00:00",
+  "generated_at": "2026-09-02T16:20:25.656087+00:00",
   "target": "fixtures/dependency_failure.py",
   "diagnosis": {
     "error_type": "ModuleNotFoundError",
@@ -13,13 +13,29 @@
   "repair": {
     "applied": true,
     "source_file": "/home/asus/BugBay-AI/fixtures/dependency_failure.py",
-    "description": "Replaced missing dependency 'nonexistent_bugbay_dependency' with controlled module 'bugbay_dependency_fallback'."
+    "description": "Replaced missing dependency 'nonexistent_bugbay_dependency' with controlled module 'bugbay_dependency_fallback'.",
+    "original_content": "import nonexistent_bugbay_dependency\n\nprint(\"Application started\")\n"
   },
   "verification": {
     "passed": true,
     "exit_code": 0,
     "stdout": "Application started\n",
     "stderr": "",
-    "duration_seconds": 0.1469948279991513
+    "duration_seconds": 0.029557999998360174,
+    "before": {
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "Traceback (most recent call last):\n  File \"/home/asus/BugBay-AI/fixtures/dependency_failure.py\", line 1, in <module>\n    import nonexistent_bugbay_dependency\nModuleNotFoundError: No module named 'nonexistent_bugbay_dependency'\n",
+      "passed": false
+    },
+    "after": {
+      "exit_code": 0,
+      "stdout": "Application started\n",
+      "stderr": "",
+      "passed": true
+    },
+    "rollback": {
+      "applied": false
+    }
   }
 }
