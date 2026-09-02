@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "generated_at": "2026-09-02T16:20:25.656087+00:00",
+  "generated_at": "2026-09-02T16:39:27.899848+00:00",
   "target": "fixtures/dependency_failure.py",
   "diagnosis": {
     "error_type": "ModuleNotFoundError",
@@ -21,7 +21,7 @@
     "exit_code": 0,
     "stdout": "Application started\n",
     "stderr": "",
-    "duration_seconds": 0.029557999998360174,
+    "duration_seconds": 0.059452900000906084,
     "before": {
       "exit_code": 1,
       "stdout": "",

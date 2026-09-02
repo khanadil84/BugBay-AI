@@ -14,6 +14,18 @@ class RepairResult:
     original_content: str | None = None
 
 
+def is_safe_source_path(source_file: str) -> bool:
+    project_root = Path.cwd().resolve()
+    source_path = Path(source_file).resolve()
+
+    try:
+        source_path.relative_to(project_root)
+    except ValueError:
+        return False
+
+    return True
+
+
 def rollback_repair(repair: RepairResult) -> bool:
     if not repair.applied or repair.original_content is None:
         return False
@@ -46,6 +58,13 @@ def repair_missing_dependency(
         )
 
     source_path = Path(diagnosis.source_file)
+
+    if not is_safe_source_path(diagnosis.source_file):
+        return RepairResult(
+            applied=False,
+            source_file=str(source_path),
+            description="Source file is outside the allowed project boundary.",
+        )
 
     if not source_path.exists():
         return RepairResult(
