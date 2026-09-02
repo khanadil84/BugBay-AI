@@ -1,0 +1,77 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+from pathlib import Path
+
+from bugbay.diagnosis import Diagnosis
+
+
+@dataclass
+class RepairResult:
+    applied: bool
+    source_file: str
+    description: str
+
+
+def repair_missing_dependency(
+    diagnosis: Diagnosis,
+    replacement_module: str,
+) -> RepairResult:
+    if not diagnosis.repairable:
+        return RepairResult(
+            applied=False,
+            source_file=diagnosis.source_file or "",
+            description="Diagnosis is not safely repairable.",
+        )
+
+    if not diagnosis.source_file or not diagnosis.missing_module:
+        return RepairResult(
+            applied=False,
+            source_file=diagnosis.source_file or "",
+            description="Required diagnosis information is missing.",
+        )
+
+    source_path = Path(diagnosis.source_file)
+
+    if not source_path.exists():
+        return RepairResult(
+            applied=False,
+            source_file=str(source_path),
+            description="Source file does not exist.",
+        )
+
+    original = source_path.read_text()
+
+    expected_import = f"import {diagnosis.missing_module}"
+
+    if expected_import not in original:
+        return RepairResult(
+            applied=False,
+            source_file=str(source_path),
+            description="Expected missing import was not found.",
+        )
+
+    repaired = original.replace(
+        expected_import,
+        f"import {replacement_module} as nonexistent_bugbay_dependency",
+        1,
+    )
+
+    if repaired == original:
+        return RepairResult(
+            applied=False,
+            source_file=str(source_path),
+            description="No change was produced.",
+        )
+
+    source_path.write_text(repaired)
+
+    return RepairResult(
+        applied=True,
+        source_file=str(source_path),
+        description=(
+            f"Replaced missing dependency "
+            f"'{diagnosis.missing_module}' with "
+            f"controlled module '{replacement_module}'."
+        ),
+    )
