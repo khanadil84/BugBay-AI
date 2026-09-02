@@ -53,7 +53,7 @@ def repair_missing_dependency(
 
     repaired = original.replace(
         expected_import,
-        f"import {replacement_module} as nonexistent_bugbay_dependency",
+        f"import {replacement_module} as {diagnosis.missing_module}",
         1,
     )
 
