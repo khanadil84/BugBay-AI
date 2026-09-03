@@ -13,7 +13,11 @@ def run_recovery(
     target: Path,
     manifest_path: Path,
     replacement_module: str,
+    max_retries: int = 1,
 ) -> bool:
+    if max_retries < 1:
+        raise ValueError("max_retries must be at least 1")
+
     # 1. Detect and capture the runtime failure.
     initial = run_target(target)
 
@@ -21,113 +25,114 @@ def run_recovery(
         print("TARGET ALREADY PASSED")
         return True
 
-    # 2. Diagnose the captured failure.
-    diagnosis = diagnose(initial.stderr)
+    attempt = 1
 
-    print("ERROR TYPE:", diagnosis.error_type)
-    print("MISSING MODULE:", diagnosis.missing_module)
-    print("MISSING VARIABLE:", diagnosis.missing_variable)
-    print("REPAIRABLE:", diagnosis.repairable)
+    while attempt <= max_retries:
+        print("RECOVERY ATTEMPT:", attempt)
 
-    # 3. Select a bounded repair based on the diagnosed failure class.
-    if diagnosis.error_type == "ModuleNotFoundError":
-        repair = repair_missing_dependency(
-            diagnosis,
-            replacement_module,
-        )
-    elif diagnosis.error_type == "NameError":
-        repair = repair_missing_variable(
-            diagnosis,
-            "BUGBAY_DATABASE_CONNECTION",
-        )
-    else:
-        repair = repair_missing_dependency(
-            diagnosis,
-            replacement_module,
-        )
+        if initial.success:
+            print("RETRY SUCCEEDED")
+            return True
 
-    print("REPAIR APPLIED:", repair.applied)
+        # 2. Diagnose the captured failure.
+        diagnosis = diagnose(initial.stderr)
 
-    if not diagnosis.repairable:
-        write_manifest(
-            manifest_path,
-            target=str(target),
-            diagnosis=diagnosis.__dict__,
-            repair=repair.__dict__,
-            verification={
-                "passed": False,
-                "exit_code": initial.exit_code,
-                "stdout": initial.stdout,
-                "stderr": initial.stderr,
-                "duration_seconds": initial.duration_seconds,
-            },
-        )
-        return False
+        print("ERROR TYPE:", diagnosis.error_type)
+        print("MISSING MODULE:", diagnosis.missing_module)
+        print("MISSING VARIABLE:", diagnosis.missing_variable)
+        print("REPAIRABLE:", diagnosis.repairable)
 
-    if not repair.applied:
-        write_manifest(
-            manifest_path,
-            target=str(target),
-            diagnosis=diagnosis.__dict__,
-            repair=repair.__dict__,
-            verification={
-                "passed": False,
-                "exit_code": initial.exit_code,
-                "stdout": initial.stdout,
-                "stderr": initial.stderr,
-                "duration_seconds": initial.duration_seconds,
-            },
-        )
-        return False
+        # 3. Select a bounded repair based on the diagnosed failure class.
+        if diagnosis.error_type == "ModuleNotFoundError":
+            repair = repair_missing_dependency(
+                diagnosis,
+                replacement_module,
+            )
+        elif diagnosis.error_type == "NameError":
+            repair = repair_missing_variable(
+                diagnosis,
+                "BUGBAY_DATABASE_CONNECTION",
+            )
+        else:
+            repair = repair_missing_dependency(
+                diagnosis,
+                replacement_module,
+            )
 
-    # 4. Re-run and independently verify.
-    verification = verify_runtime(target)
+        print("REPAIR APPLIED:", repair.applied)
 
-    print("VERIFICATION PASSED:", verification.passed)
+        if not diagnosis.repairable or not repair.applied:
+            if attempt >= max_retries:
+                return False
 
-    rolled_back = False
+            attempt += 1
+            initial = run_target(target)
+            continue
 
-    if not verification.passed:
+        # 4. Re-run and independently verify.
+        verification = verify_runtime(target)
+
+        print("VERIFICATION PASSED:", verification.passed)
+
+        if verification.passed:
+            write_manifest(
+                manifest_path,
+                target=str(target),
+                diagnosis=diagnosis.__dict__,
+                repair=repair.__dict__,
+                verification={
+                    **verification.__dict__,
+                    "before": {
+                        "exit_code": initial.exit_code,
+                        "stdout": initial.stdout,
+                        "stderr": initial.stderr,
+                        "passed": initial.success,
+                    },
+                    "after": {
+                        "exit_code": verification.exit_code,
+                        "stdout": verification.stdout,
+                        "stderr": verification.stderr,
+                        "passed": verification.passed,
+                    },
+                    "rollback": {
+                        "applied": False,
+                    },
+                },
+            )
+            return True
+
         rolled_back = rollback_repair(repair)
         print("ROLLBACK APPLIED:", rolled_back)
 
-    # 5. Persist the complete recovery evidence.
-    write_manifest(
-        manifest_path,
-        target=str(target),
-        diagnosis=diagnosis.__dict__,
-        repair=repair.__dict__,
-        verification={
-            **verification.__dict__,
-            "before": {
-                "exit_code": initial.exit_code,
-                "stdout": initial.stdout,
-                "stderr": initial.stderr,
-                "passed": initial.success,
-            },
-            "after": {
-                "exit_code": verification.exit_code,
-                "stdout": verification.stdout,
-                "stderr": verification.stderr,
-                "passed": verification.passed,
-            },
-            "rollback": {
-                "applied": rolled_back,
-            },
-        },
-    )
+        if attempt >= max_retries:
+            write_manifest(
+                manifest_path,
+                target=str(target),
+                diagnosis=diagnosis.__dict__,
+                repair=repair.__dict__,
+                verification={
+                    **verification.__dict__,
+                    "before": {
+                        "exit_code": initial.exit_code,
+                        "stdout": initial.stdout,
+                        "stderr": initial.stderr,
+                        "passed": initial.success,
+                    },
+                    "after": {
+                        "exit_code": verification.exit_code,
+                        "stdout": verification.stdout,
+                        "stderr": verification.stderr,
+                        "passed": verification.passed,
+                    },
+                    "rollback": {
+                        "applied": rolled_back,
+                    },
+                },
+            )
+            return False
 
-    return verification.passed
+        attempt += 1
+        initial = run_target(target)
 
+    return False
 
-if __name__ == "__main__":
-    target = Path("fixtures/dependency_failure.py")
-    manifest = Path("manifests/diagnostic-manifest.json")
-
-    success = run_recovery(
-        target=target,
-        manifest_path=manifest,
-        replacement_module="bugbay_dependency_fallback",
-    )
-
-    raise SystemExit(0 if success else 1)
