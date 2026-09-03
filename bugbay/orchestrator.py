@@ -51,6 +51,13 @@ def run_recovery(
                         "stderr": initial_failure.stderr,
                         "passed": initial_failure.success,
                     },
+                    "post_repair_verification": {
+                        "passed": post_repair_verification.passed,
+                        "exit_code": post_repair_verification.exit_code,
+                        "stdout": post_repair_verification.stdout,
+                        "stderr": post_repair_verification.stderr,
+                        "duration_seconds": post_repair_verification.duration_seconds,
+                    },
                     "after": {
                         "exit_code": initial.exit_code,
                         "stdout": initial.stdout,
@@ -162,6 +169,7 @@ def run_recovery(
             )
             return True
 
+        post_repair_verification = verification
         rolled_back = rollback_repair(repair)
         print("ROLLBACK APPLIED:", rolled_back)
 
