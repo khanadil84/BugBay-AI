@@ -95,8 +95,27 @@ def repair_missing_dependency(
         )
 
     original = source_path.read_text()
+    source_lines = original.splitlines()
+
+    if (
+        diagnosis.line_number is None
+        or diagnosis.line_number < 1
+        or diagnosis.line_number > len(source_lines)
+    ):
+        return RepairResult(
+            applied=False,
+            source_file=str(source_path),
+            description="Diagnosed source line is outside the source file.",
+        )
 
     expected_import = f"import {diagnosis.missing_module}"
+
+    if source_lines[diagnosis.line_number - 1].strip() != expected_import:
+        return RepairResult(
+            applied=False,
+            source_file=str(source_path),
+            description="Diagnosed source line does not contain the expected missing import.",
+        )
 
     if expected_import not in original:
         return RepairResult(

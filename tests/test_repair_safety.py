@@ -46,5 +46,5 @@ def test_repair_rejects_unexpected_source_content(tmp_path) -> None:
 
     assert result.applied is False
     assert result.description == (
-        "Expected missing import was not found."
+        "Diagnosed source line does not contain the expected missing import."
     )
