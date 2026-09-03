@@ -231,7 +231,7 @@ passed: false       "database_        original_content:   with explicit value"
                                     rollback: false
 ```
 
-This is a **cryptographically timestamped audit trail** of the entire autonomous recovery — not just a log line.
+This is a **timestamped audit trail** of the entire autonomous recovery — not just a log line.
 
 ### Real Manifest Evidence
 
@@ -286,7 +286,7 @@ The Rote Play presentation visualizes BugBay's recovery loop as an 8-phase SRE C
 ## Test Suite & Verified Results
 
 ```
-17 tests collected · 15 pass · 2 platform-specific (Windows path assertions)
+17 tests collected · 17 passed
 ```
 
 | Test File | Tests | What It Proves |
