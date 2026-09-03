@@ -27,3 +27,21 @@ TypeError: unsupported operand type(s) for +: 'int' and 'str'
 
     assert result.error_type == "TypeError"
     assert result.repairable is False
+
+
+def test_multiframe_traceback_uses_crash_frame() -> None:
+    stderr = """Traceback (most recent call last):
+  File "/home/asus/BugBay-AI/fixtures/app.py", line 10, in start_application
+    connect()
+  File "/home/asus/BugBay-AI/fixtures/database.py", line 25, in connect
+    print(database_connection)
+NameError: name 'database_connection' is not defined
+"""
+
+    result = diagnose(stderr)
+
+    assert result.error_type == "NameError"
+    assert result.missing_variable == "database_connection"
+    assert result.source_file == "/home/asus/BugBay-AI/fixtures/database.py"
+    assert result.line_number == 25
+    assert result.repairable is True
