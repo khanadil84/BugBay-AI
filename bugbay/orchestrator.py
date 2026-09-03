@@ -63,6 +63,34 @@ def run_recovery(
 
         if not diagnosis.repairable or not repair.applied:
             if attempt >= max_retries:
+                write_manifest(
+                    manifest_path,
+                    target=str(target),
+                    diagnosis=diagnosis.__dict__,
+                    repair=repair.__dict__,
+                    verification={
+                        "passed": False,
+                        "exit_code": initial.exit_code,
+                        "stdout": initial.stdout,
+                        "stderr": initial.stderr,
+                        "duration_seconds": initial.duration_seconds,
+                        "before": {
+                            "exit_code": initial.exit_code,
+                            "stdout": initial.stdout,
+                            "stderr": initial.stderr,
+                            "passed": initial.success,
+                        },
+                        "after": {
+                            "exit_code": initial.exit_code,
+                            "stdout": initial.stdout,
+                            "stderr": initial.stderr,
+                            "passed": initial.success,
+                        },
+                        "rollback": {
+                            "applied": False,
+                        },
+                    },
+                )
                 return False
 
             attempt += 1

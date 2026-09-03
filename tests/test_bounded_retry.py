@@ -57,3 +57,25 @@ def test_orchestrator_stops_at_retry_limit(tmp_path):
     )
 
     assert result is False
+
+
+def test_non_repairable_failure_writes_manifest(tmp_path):
+    from bugbay.orchestrator import run_recovery
+
+    target = Path("fixtures/permanent_failure.py")
+    manifest = tmp_path / "diagnostic-manifest.json"
+
+    result = run_recovery(
+        target=target,
+        manifest_path=manifest,
+        replacement_module="bugbay_dependency_fallback",
+        max_retries=2,
+    )
+
+    assert result is False
+    assert manifest.exists()
+
+    content = manifest.read_text()
+    assert '"repairable": false' in content
+    assert '"applied": false' in content
+    assert "Permanent controlled failure" in content
