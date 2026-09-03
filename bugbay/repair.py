@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+import os
+import tempfile
 
 from bugbay.diagnosis import Diagnosis
 
@@ -26,6 +28,25 @@ def is_safe_source_path(source_file: str) -> bool:
     return True
 
 
+def atomic_write_text(path: Path, content: str) -> None:
+    directory = path.parent
+
+    with tempfile.NamedTemporaryFile(
+        mode="w",
+        encoding="utf-8",
+        dir=directory,
+        delete=False,
+    ) as temporary:
+        temporary.write(content)
+        temporary_path = Path(temporary.name)
+
+    try:
+        os.replace(temporary_path, path)
+    except Exception:
+        temporary_path.unlink(missing_ok=True)
+        raise
+
+
 def rollback_repair(repair: RepairResult) -> bool:
     if not repair.applied or repair.original_content is None:
         return False
@@ -35,7 +56,7 @@ def rollback_repair(repair: RepairResult) -> bool:
     if not source_path.exists():
         return False
 
-    source_path.write_text(repair.original_content)
+    atomic_write_text(source_path, repair.original_content)
     return True
 
 
@@ -97,7 +118,7 @@ def repair_missing_dependency(
             description="No change was produced.",
         )
 
-    source_path.write_text(repaired)
+    atomic_write_text(source_path, repaired)
 
     return RepairResult(
         applied=True,
