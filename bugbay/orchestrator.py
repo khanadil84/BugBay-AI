@@ -18,6 +18,8 @@ def run_recovery(
     if max_retries < 1:
         raise ValueError("max_retries must be at least 1")
 
+    project_root = target.resolve().parent.parent
+
     # 1. Detect and capture the runtime failure.
     initial = run_target(target)
 
@@ -84,11 +86,13 @@ def run_recovery(
             repair = repair_missing_dependency(
                 diagnosis,
                 replacement_module,
+                project_root,
             )
         elif diagnosis.error_type == "NameError":
             repair = repair_missing_variable(
                 diagnosis,
                 "BUGBAY_DATABASE_CONNECTION",
+                project_root,
             )
         else:
             from bugbay.repair import RepairResult

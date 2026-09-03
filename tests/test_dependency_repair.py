@@ -28,6 +28,7 @@ def test_missing_dependency_repair_replaces_expected_import() -> None:
     result = repair_missing_dependency(
         diagnosis,
         "bugbay_dependency_fallback",
+        Path.cwd(),
     )
 
     assert result.applied is True

@@ -16,8 +16,8 @@ class RepairResult:
     original_content: str | None = None
 
 
-def is_safe_source_path(source_file: str) -> bool:
-    project_root = Path.cwd().resolve()
+def is_safe_source_path(source_file: str, project_root: Path) -> bool:
+    project_root = project_root.resolve()
     source_path = Path(source_file).resolve()
 
     try:
@@ -63,6 +63,7 @@ def rollback_repair(repair: RepairResult) -> bool:
 def repair_missing_dependency(
     diagnosis: Diagnosis,
     replacement_module: str,
+    project_root: Path,
 ) -> RepairResult:
     if not diagnosis.repairable:
         return RepairResult(
@@ -80,7 +81,7 @@ def repair_missing_dependency(
 
     source_path = Path(diagnosis.source_file)
 
-    if not is_safe_source_path(diagnosis.source_file):
+    if not is_safe_source_path(diagnosis.source_file, project_root):
         return RepairResult(
             applied=False,
             source_file=str(source_path),
@@ -154,6 +155,7 @@ def repair_missing_dependency(
 def repair_missing_variable(
     diagnosis: Diagnosis,
     replacement_value: str,
+    project_root: Path,
 ) -> RepairResult:
     if not diagnosis.repairable:
         return RepairResult(
@@ -171,7 +173,7 @@ def repair_missing_variable(
 
     source_path = Path(diagnosis.source_file)
 
-    if not is_safe_source_path(diagnosis.source_file):
+    if not is_safe_source_path(diagnosis.source_file, project_root):
         return RepairResult(
             applied=False,
             source_file=str(source_path),

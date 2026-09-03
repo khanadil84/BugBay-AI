@@ -17,6 +17,7 @@ def test_repair_rejects_source_outside_project() -> None:
     result = repair_missing_dependency(
         diagnosis,
         "bugbay_dependency_fallback",
+        Path.cwd(),
     )
 
     assert result.applied is False
@@ -42,6 +43,7 @@ def test_repair_rejects_unexpected_source_content(tmp_path) -> None:
     result = repair_missing_dependency(
         diagnosis,
         "bugbay_dependency_fallback",
+        Path.cwd(),
     )
 
     assert result.applied is False

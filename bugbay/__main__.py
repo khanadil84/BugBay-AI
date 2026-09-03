@@ -33,8 +33,10 @@ def main() -> int:
 
     args = parser.parse_args()
 
-    target = Path(args.target)
+    target = Path(args.target).resolve()
     manifest = Path(args.manifest)
+    if not manifest.is_absolute():
+        manifest = target.parent.parent / manifest
 
     print("BugBay runtime recovery starting...")
     print("TARGET:", target)

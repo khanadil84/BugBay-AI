@@ -27,6 +27,7 @@ def test_missing_variable_repair_uses_explicit_value(tmp_path: Path) -> None:
     result = repair_missing_variable(
         diagnosis,
         "BUGBAY_DATABASE_CONNECTION",
+        Path.cwd(),
     )
 
     assert result.applied is True
@@ -61,6 +62,7 @@ def test_missing_variable_repair_can_be_rolled_back() -> None:
     result = repair_missing_variable(
         diagnosis,
         "BUGBAY_DATABASE_CONNECTION",
+        Path.cwd(),
     )
 
     assert result.applied is True
