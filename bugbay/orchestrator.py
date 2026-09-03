@@ -25,6 +25,8 @@ def run_recovery(
         print("TARGET ALREADY PASSED")
         return True
 
+    initial_failure = initial
+
     attempt = 1
 
     while attempt <= max_retries:
@@ -32,6 +34,34 @@ def run_recovery(
 
         if initial.success:
             print("RETRY SUCCEEDED")
+            write_manifest(
+                manifest_path,
+                target=str(target),
+                diagnosis=diagnosis.__dict__,
+                repair=repair.__dict__,
+                verification={
+                    "passed": True,
+                    "exit_code": initial.exit_code,
+                    "stdout": initial.stdout,
+                    "stderr": initial.stderr,
+                    "duration_seconds": initial.duration_seconds,
+                    "before": {
+                        "exit_code": initial_failure.exit_code,
+                        "stdout": initial_failure.stdout,
+                        "stderr": initial_failure.stderr,
+                        "passed": initial_failure.success,
+                    },
+                    "after": {
+                        "exit_code": initial.exit_code,
+                        "stdout": initial.stdout,
+                        "stderr": initial.stderr,
+                        "passed": initial.success,
+                    },
+                    "rollback": {
+                        "applied": True,
+                    },
+                },
+            )
             return True
 
         # 2. Diagnose the captured failure.

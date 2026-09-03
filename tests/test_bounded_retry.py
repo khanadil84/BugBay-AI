@@ -79,3 +79,32 @@ def test_non_repairable_failure_writes_manifest(tmp_path):
     assert '"repairable": false' in content
     assert '"applied": false' in content
     assert "Permanent controlled failure" in content
+
+
+def test_successful_retry_writes_manifest(tmp_path):
+    from bugbay.orchestrator import run_recovery
+
+    target = Path("fixtures/retry_failure.py")
+    attempt_file = Path("manifests/retry-attempt.txt")
+    manifest = tmp_path / "diagnostic-manifest.json"
+
+    attempt_file.unlink(missing_ok=True)
+
+    result = run_recovery(
+        target=target,
+        manifest_path=manifest,
+        replacement_module="bugbay_dependency_fallback",
+        max_retries=3,
+    )
+
+    assert result is True
+    assert manifest.exists()
+
+    content = manifest.read_text()
+    assert '"passed": true' in content
+    assert '"rollback":' in content
+    assert '"before":' in content
+    assert '"passed": false' in content
+    assert "database_connection" in content
+
+    attempt_file.unlink(missing_ok=True)
