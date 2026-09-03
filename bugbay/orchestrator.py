@@ -84,9 +84,12 @@ def run_recovery(
                 "BUGBAY_DATABASE_CONNECTION",
             )
         else:
-            repair = repair_missing_dependency(
-                diagnosis,
-                replacement_module,
+            from bugbay.repair import RepairResult
+
+            repair = RepairResult(
+                applied=False,
+                source_file=diagnosis.source_file or "",
+                description="No safe repair strategy is available for this failure type.",
             )
 
         print("REPAIR APPLIED:", repair.applied)

@@ -78,6 +78,7 @@ def test_non_repairable_failure_writes_manifest(tmp_path):
     content = manifest.read_text()
     assert '"repairable": false' in content
     assert '"applied": false' in content
+    assert "No safe repair strategy is available for this failure type." in content
     assert "Permanent controlled failure" in content
 
 
