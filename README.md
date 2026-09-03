@@ -2,9 +2,9 @@
 
 # BugBay
 
-### Autonomous Runtime Recovery Engine for Python
-
 **Detect. Diagnose. Repair. Verify. All without human intervention.**
+
+> **BugBay AI — The Autonomous Runtime Stack-Trace Surgeon & Self-Healing SRE Engine**
 
 ---
 
