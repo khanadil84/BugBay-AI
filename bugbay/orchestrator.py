@@ -5,7 +5,7 @@ from pathlib import Path
 from bugbay.diagnosis import diagnose
 from bugbay.interceptor import run_target
 from bugbay.manifest import write_manifest
-from bugbay.repair import repair_missing_dependency, rollback_repair
+from bugbay.repair import repair_missing_dependency, repair_missing_variable, rollback_repair
 from bugbay.verifier import verify_runtime
 
 
@@ -26,13 +26,25 @@ def run_recovery(
 
     print("ERROR TYPE:", diagnosis.error_type)
     print("MISSING MODULE:", diagnosis.missing_module)
+    print("MISSING VARIABLE:", diagnosis.missing_variable)
     print("REPAIRABLE:", diagnosis.repairable)
 
-    # 3. Apply a bounded repair only when diagnosis permits it.
-    repair = repair_missing_dependency(
-        diagnosis,
-        replacement_module,
-    )
+    # 3. Select a bounded repair based on the diagnosed failure class.
+    if diagnosis.error_type == "ModuleNotFoundError":
+        repair = repair_missing_dependency(
+            diagnosis,
+            replacement_module,
+        )
+    elif diagnosis.error_type == "NameError":
+        repair = repair_missing_variable(
+            diagnosis,
+            "BUGBAY_DATABASE_CONNECTION",
+        )
+    else:
+        repair = repair_missing_dependency(
+            diagnosis,
+            replacement_module,
+        )
 
     print("REPAIR APPLIED:", repair.applied)
 

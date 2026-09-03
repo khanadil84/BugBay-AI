@@ -130,3 +130,60 @@ def repair_missing_dependency(
         ),
         original_content=original,
     )
+
+
+def repair_missing_variable(
+    diagnosis: Diagnosis,
+    replacement_value: str,
+) -> RepairResult:
+    if not diagnosis.repairable:
+        return RepairResult(
+            applied=False,
+            source_file=diagnosis.source_file or "",
+            description="Diagnosis is not safely repairable.",
+        )
+
+    if not diagnosis.source_file or not diagnosis.missing_variable:
+        return RepairResult(
+            applied=False,
+            source_file=diagnosis.source_file or "",
+            description="Required missing-variable information is missing.",
+        )
+
+    source_path = Path(diagnosis.source_file)
+
+    if not is_safe_source_path(diagnosis.source_file):
+        return RepairResult(
+            applied=False,
+            source_file=str(source_path),
+            description="Source file is outside the allowed project boundary.",
+        )
+
+    if not source_path.exists():
+        return RepairResult(
+            applied=False,
+            source_file=str(source_path),
+            description="Source file does not exist.",
+        )
+
+    original = source_path.read_text()
+
+    declaration = (
+        f"{diagnosis.missing_variable} = "
+        f"{replacement_value!r}\n"
+    )
+
+    repaired = declaration + original
+
+    atomic_write_text(source_path, repaired)
+
+    return RepairResult(
+        applied=True,
+        source_file=str(source_path),
+        description=(
+            f"Defined missing variable "
+            f"'{diagnosis.missing_variable}' "
+            f"with an explicit controlled value."
+        ),
+        original_content=original,
+    )

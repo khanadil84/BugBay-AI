@@ -9,6 +9,7 @@ def test_repair_rejects_source_outside_project() -> None:
         source_file="/tmp/outside.py",
         line_number=1,
         missing_module="missing_dependency",
+        missing_variable=None,
         repairable=True,
     )
 
